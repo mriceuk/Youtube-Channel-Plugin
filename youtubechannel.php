@@ -55,8 +55,8 @@ function ytchannel($atts) {
       
       if ($showcase != '') { 
       	
-      	$full_path = $entry['media:group']['media:content']['0_attr']['url'];
-      	$short_yt_code = preg_replace('/\?.*/', '', preg_replace('/.*\/v\//', '', $full_path));
+	$full_path = $entry['link']['0_attr']['href'];
+      	$short_yt_code = preg_replace('%.*(v=|/v/)(.+?)(/|&|\\?).*%', '$2', $full_path);
       
       	$current_url = preg_replace(('/\?.*/'), '', $_SERVER['REQUEST_URI']);
         $new_vid_url = $current_url . "?entry=" . $short_yt_code;
