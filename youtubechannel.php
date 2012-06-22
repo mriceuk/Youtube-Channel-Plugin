@@ -3,7 +3,7 @@
 Plugin Name: Youtube Channel Plugin
 Plugin URI: http://www.github.com/marcrice83
 Description: Loads a youtube channel onto the page or post via a shortcode
-Version: 0.1
+Version: 0.2
 Author: Marc Rice
 */
 
@@ -17,13 +17,19 @@ function ytchannel($atts) {
     extract(shortcode_atts(array(
 		"channel" => 'Default', 
 		"limit" => '10', 
-        "width" => '150',
+        "thumbnail_width" => '150',
         "show_titles" => '1',
         "showcase" => '',
         "showcase_width" => "600", 
         "showcase_height" => "300"), $atts));
-	
-    $arr = xml2array('http://gdata.youtube.com/feeds/api/videos?q=' . $channel . '&max-results=' . $limit);
+
+    $str = 'http://gdata.youtube.com/feeds/users/'.$channel.'/uploads?max-results='.$limit.'';
+    $arr = xml2array($str);
+    
+	if (empty($arr)) { 
+		echo('Youtube Channel "' . $channel . '" not found');
+	}
+	 
     $feed = $arr['feed'];
     $entries = $feed['entry'];
     
@@ -38,12 +44,18 @@ function ytchannel($atts) {
       $title = ($entry['media:group']['media:title']);
       
       if ($showcase != ""):
+      
+      	$full_path = $entry['link']['0_attr']['href'];
+		$short_yt_code = preg_replace('%.*(v=|/v/)(.+?)(/|&|\\?).*%', '$2', $full_path);
+		if ($showcase == "auto") { $showcase = $short_yt_code; }
+        
         if (isset($_GET['entry'])) { 
-          	$iframe_src = 'http://www.youtube.com/v/' . $_GET['entry'] . '?version=3&f=videos&app=youtube_gdata';
+        	$iframe_src = 'http://www.youtube.com/v/' . $_GET['entry'] . '?version=3&f=videos&app=youtube_gdata&autoplay=1';
         }
         else {
-        	$iframe_src = $entry['media:group']['media:content']['0_attr']['url'];
+        	$iframe_src = 'http://www.youtube.com/v/' . $showcase . '?version=3&f=videos&app=youtube_gdata&autoplay=0';
         }
+      	
       	$showcase_output = "<iframe height='" . $showcase_height . "' width='". $showcase_width . "' src='" . $iframe_src . "'></iframe>";
         
       endif;
@@ -55,15 +67,12 @@ function ytchannel($atts) {
       
       if ($showcase != '') { 
       	
-      	$full_path = $entry['media:group']['media:content']['0_attr']['url'];
-      	$short_yt_code = preg_replace('/\?.*/', '', preg_replace('/.*\/v\//', '', $full_path));
-      
       	$current_url = preg_replace(('/\?.*/'), '', $_SERVER['REQUEST_URI']);
-        $new_vid_url = $current_url . "?entry=" . $short_yt_code;
+        $new_vid_url = $current_url . "?entry=" . $short_yt_code;  
         $entries_output .= '<a href="'. $new_vid_url . '">'; 
       }
       
-      $entries_output .= "<img src='" . $thumbnail . "' width=" . $width . "/>";
+      $entries_output .= "<img src='" . $thumbnail . "' width=" . $thumbnail_width . "/>";
       if ($showcase != '') { $entries_output .= "</a>"; }
       $entries_output .= "</div>";
 
@@ -73,9 +82,6 @@ function ytchannel($atts) {
 	echo $output;
 
 }
-
-
-
 
 
 //getting php array from xml feed
